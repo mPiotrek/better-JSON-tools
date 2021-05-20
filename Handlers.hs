@@ -10,28 +10,29 @@ module Handlers
 
 import Data.Foldable (foldl')
 import Data.Maybe (catMaybes)
-import Data.Text (Text)
-import Data.ByteString.Lazy (ByteString)
+import Data.Text.Lazy (Text,toStrict)
+import Data.Text.Lazy.Builder (toLazyText)
 import Data.HashMap.Strict (HashMap,(!),delete,keys,fromList,union,intersection,difference)
-import Data.Aeson (encode,Value (Object))
-import Data.Aeson.Encode.Pretty (encodePretty)
+import Data.Aeson (Value (Object))
+import Data.Aeson.Text (encodeToTextBuilder)
+import Data.Aeson.Encode.Pretty (encodePrettyToTextBuilder)
 import Servant (Handler,throwError,err422,err500,errBody)
 
 import Endpoints
-    ( MinifyJob (..)
-    , FormatJob (..)
+    ( MinifyJob (..), MinifyRes (..)
+    , FormatJob (..), FormatRes (..)
     , FilterJob (..), FilterRes (..)
     , DiffJob (..), DiffRes (..)
     )
 
 
 
-minifyHandler :: MinifyJob -> Handler ByteString
-minifyHandler MinifyJob {..} = return $ encode minifyPayload
+minifyHandler :: MinifyJob -> Handler MinifyRes
+minifyHandler MinifyJob {..} = return . MinifyRes . toLazyText . encodeToTextBuilder $ minifyPayload
 
 
-formatHandler :: FormatJob -> Handler ByteString
-formatHandler FormatJob {..} = return $ encodePretty formatPayload
+formatHandler :: FormatJob -> Handler FormatRes
+formatHandler FormatJob {..} = return . FormatRes . toLazyText . encodePrettyToTextBuilder $ formatPayload
 
 
 filterHandler :: FilterJob -> Handler FilterRes
@@ -41,7 +42,8 @@ filterHandler
         = return
         . FilterRes
         . Object
-        $ foldl' (flip delete) filterDict filterKeys
+        . foldl' (flip delete) filterDict
+        $ toStrict <$> filterKeys
 
 filterHandler _
     = throwError
