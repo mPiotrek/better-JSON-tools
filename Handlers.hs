@@ -12,7 +12,9 @@ import Data.Foldable (foldl')
 import Data.Maybe (catMaybes)
 import Data.Text.Lazy (Text,toStrict)
 import Data.Text.Lazy.Builder (toLazyText)
-import Data.HashMap.Strict (HashMap,(!),delete,keys,fromList,union,intersection,difference)
+import Data.HashMap.Strict (HashMap,(!),union,intersection,difference)
+import qualified Data.HashMap.Strict as HM
+import qualified Data.HashSet as HS
 import Data.Aeson (Value (Object))
 import Data.Aeson.Text (encodeToTextBuilder)
 import Data.Aeson.Encode.Pretty (encodePrettyToTextBuilder)
@@ -42,8 +44,10 @@ filterHandler
         = return
         . FilterRes
         . Object
-        . foldl' (flip delete) filterDict
-        $ toStrict <$> filterKeys
+        . HM.filterWithKey (\k _ -> k `HS.member` keySet)
+        $ filterDict
+    where
+        keySet = HS.fromList $ toStrict <$> filterKeys
 
 filterHandler _
     = throwError
@@ -58,13 +62,13 @@ jsonDiff (Object dictA) (Object dictB) = Just (Object diffA,Object diffB)
     where
         addedA = dictA `difference` dictB
         addedB = dictB `difference` dictA
-        alteredKeys = keys $ dictA `intersection` dictB
+        alteredKeys = HM.keys $ dictA `intersection` dictB
         altered = catMaybes [withKey k $ jsonDiff (dictA ! k) (dictB ! k) | k <- alteredKeys]
             where
                 withKey k (Just (x,y)) = Just ((k,x),(k,y))
                 withKey k Nothing = Nothing
-        alteredA = fromList $ fst <$> altered
-        alteredB = fromList $ snd <$> altered
+        alteredA = HM.fromList $ fst <$> altered
+        alteredB = HM.fromList $ snd <$> altered
         diffA = addedA `union` alteredA
         diffB = addedB `union` alteredB
 
