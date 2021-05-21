@@ -12,15 +12,15 @@ module Endpoints
 import Data.Text.Lazy (Text)
 import Data.Aeson (Value,FromJSON,ToJSON)
 import GHC.Generics (Generic)
-import Servant.API ((:>),(:<|>),ReqBody,Get,JSON)
+import Servant.API ((:>),(:<|>),ReqBody,Post,JSON)
 
 
 
-type JsonToolsApi = "minify" :> ReqBody '[JSON] MinifyJob :> Get '[JSON] MinifyRes
-               :<|> "format" :> ReqBody '[JSON] FormatJob :> Get '[JSON] FormatRes
-               :<|> "filter" :> ReqBody '[JSON] FilterJob :> Get '[JSON] FilterRes
-               :<|> "diff"   :> ReqBody '[JSON] DiffJob   :> Get '[JSON] DiffRes
---             :<|> "all"    :> ReqBody '[JSON] _         :> Get '[JSON] _
+type JsonToolsApi = "minify" :> ReqBody '[JSON] MinifyJob :> Post '[JSON] MinifyRes
+               :<|> "format" :> ReqBody '[JSON] FormatJob :> Post '[JSON] FormatRes
+               :<|> "filter" :> ReqBody '[JSON] FilterJob :> Post '[JSON] FilterRes
+               :<|> "diff"   :> ReqBody '[JSON] DiffJob   :> Post '[JSON] DiffRes
+--             :<|> "all"    :> ReqBody '[JSON] _         :> Post '[JSON] _
 
 
 newtype MinifyJob = MinifyJob { minifyPayload :: Value } deriving (Eq,Show,Generic)
